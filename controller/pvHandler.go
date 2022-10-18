@@ -7,10 +7,9 @@ import (
 	"k8sManager/service"
 )
 
-func GetPodHandler(c *gin.Context) {
+func GetPvHandler(c *gin.Context) {
 	params := new(struct {
 		FilterName string `form:"filter_name"`
-		Namespace  string `form:"namespace" binding:"required"`
 		Limit      int    `form:"limit"`
 		Page       int    `form:"page"`
 	})
@@ -23,7 +22,7 @@ func GetPodHandler(c *gin.Context) {
 		})
 		return
 	}
-	data, err := service.Pod.GetPods(params.FilterName, params.Namespace, params.Limit, params.Page)
+	data, err := service.Pv.GetPv(params.FilterName, params.Limit, params.Page)
 	if err != nil {
 		logrus.Error(err.Error())
 		c.JSON(500, gin.H{
@@ -41,12 +40,9 @@ func GetPodHandler(c *gin.Context) {
 	})
 }
 
-func GetEventListHandler(c *gin.Context) {
+func GetPVDetailsHandler(c *gin.Context) {
 	params := new(struct {
-		FilterName string `form:"filter_name"`
-		Namespace  string `form:"namespace" binding:"required"`
-		Limit      int    `form:"limit"`
-		Page       int    `form:"page"`
+		Name string `form:"name" binding:"required"`
 	})
 	if err := c.Bind(params); err != nil {
 		logrus.Error("Bind绑定form参数失败" + err.Error())
@@ -57,7 +53,7 @@ func GetEventListHandler(c *gin.Context) {
 		})
 		return
 	}
-	data, err := service.Event.GetEvents(params.FilterName, params.Namespace, params.Limit, params.Page)
+	data, err := service.Pv.GetPvDetails(params.Name)
 	if err != nil {
 		logrus.Error(err.Error())
 		c.JSON(500, gin.H{
@@ -75,73 +71,8 @@ func GetEventListHandler(c *gin.Context) {
 	})
 }
 
-func GetPodLogHandler(c *gin.Context) {
-	params := new(struct {
-		Name          string `form:"name" binding:"required"`
-		ContainerName string `form:"container_name" binding:"required"`
-		Namespace     string `form:"namespace" binding:"required"`
-	})
-	if err := c.Bind(params); err != nil {
-		logrus.Error("Bind绑定form参数失败" + err.Error())
-		c.JSON(500, gin.H{
-			"code": "500",
-			"data": nil,
-			"msg":  err.Error(),
-		})
-		return
-	}
-	data, err := service.Pod.GetPodLog(params.Name, params.Namespace, params.ContainerName)
-	if err != nil {
-		logrus.Error(err.Error())
-		c.JSON(500, gin.H{
-			"code": "500",
-			"data": nil,
-			"msg":  err.Error(),
-		})
-		return
-	}
-
-	c.JSON(200, gin.H{
-		"msg":  "Successfully",
-		"code": 200,
-		"data": data,
-	})
-}
-
-func GetPodDetailsHandler(c *gin.Context) {
-	params := new(struct {
-		Name      string `form:"name" binding:"required"`
-		Namespace string `form:"namespace" binding:"required"`
-	})
-	if err := c.Bind(params); err != nil {
-		logrus.Error("Bind绑定form参数失败" + err.Error())
-		c.JSON(500, gin.H{
-			"code": "500",
-			"data": nil,
-			"msg":  err.Error(),
-		})
-		return
-	}
-	data, err := service.Pod.GetPodDetails(params.Name, params.Namespace)
-	if err != nil {
-		logrus.Error(err.Error())
-		c.JSON(500, gin.H{
-			"code": "500",
-			"data": nil,
-			"msg":  err.Error(),
-		})
-		return
-	}
-
-	c.JSON(200, gin.H{
-		"msg":  "Successfully",
-		"code": 200,
-		"data": data,
-	})
-}
-
-func CreatePodHandler(c *gin.Context) {
-	params := &service.PodFied{}
+func CreatePvHandler(c *gin.Context) {
+	params := &service.PvFied{}
 	if err := c.Bind(params); err != nil {
 		logrus.Error("Bind绑定form参数失败" + err.Error())
 		c.JSON(500, gin.H{
@@ -152,7 +83,7 @@ func CreatePodHandler(c *gin.Context) {
 		return
 	}
 	fmt.Printf("%#v\n", params)
-	err := service.Pod.CreatePod(params)
+	err := service.Pv.CreatePv(params)
 	if err != nil {
 		logrus.Error(err.Error())
 		c.JSON(500, gin.H{
@@ -166,12 +97,12 @@ func CreatePodHandler(c *gin.Context) {
 	c.JSON(200, gin.H{
 		"msg":  "Successfully",
 		"code": 200,
-		"name": params.PName,
+		"name": params.Name,
 	})
 }
 
-func GetNsPodNumHandler(c *gin.Context) {
-	data, err := service.Pod.GetPodNum()
+func GetPvNumHandler(c *gin.Context) {
+	data, err := service.Pv.GetPvNum()
 	if err != nil {
 		logrus.Error(err.Error())
 		c.JSON(500, gin.H{
@@ -189,10 +120,9 @@ func GetNsPodNumHandler(c *gin.Context) {
 	})
 }
 
-func DeletePodHandler(c *gin.Context) {
+func DeletePvHandler(c *gin.Context) {
 	params := new(struct {
-		Name      string `form:"name" binding:"required"`
-		Namespace string `form:"namespace" binding:"required"`
+		Name string `form:"name" binding:"required"`
 	})
 	if err := c.Bind(params); err != nil {
 		logrus.Error("Bind绑定form参数失败" + err.Error())
@@ -203,7 +133,7 @@ func DeletePodHandler(c *gin.Context) {
 		})
 		return
 	}
-	err := service.Pod.DeletePod(params.Name, params.Namespace)
+	err := service.Pv.DeletePv(params.Name)
 	if err != nil {
 		logrus.Error(err.Error())
 		c.JSON(500, gin.H{
@@ -219,10 +149,9 @@ func DeletePodHandler(c *gin.Context) {
 		"code": 200,
 	})
 }
-func UpdatePodHandler(c *gin.Context) {
+func UpdatePvHandler(c *gin.Context) {
 	params := new(struct {
-		Namespace string `form:"namespace" binding:"required"`
-		Content   string `form:"content" binding:"required"`
+		Content string `form:"content" binding:"required"`
 	})
 	if err := c.Bind(params); err != nil {
 		logrus.Error("Bind绑定form参数失败" + err.Error())
@@ -233,7 +162,7 @@ func UpdatePodHandler(c *gin.Context) {
 		})
 		return
 	}
-	err := service.Pod.UpdatePod(params.Namespace, params.Content)
+	err := service.Pv.UpdatePv(params.Content)
 	if err != nil {
 		logrus.Error(err.Error())
 		c.JSON(500, gin.H{
@@ -250,10 +179,9 @@ func UpdatePodHandler(c *gin.Context) {
 	})
 }
 
-func GetContainerNameHandler(c *gin.Context) {
+func GetPvBindHandler(c *gin.Context) {
 	params := new(struct {
-		Name      string `form:"name" binding:"required"`
-		Namespace string `form:"namespace" binding:"required"`
+		Name string `form:"name" binding:"required"`
 	})
 	if err := c.Bind(params); err != nil {
 		logrus.Error("Bind绑定form参数失败" + err.Error())
@@ -264,7 +192,7 @@ func GetContainerNameHandler(c *gin.Context) {
 		})
 		return
 	}
-	data, err := service.Pod.GetContainerName(params.Name, params.Namespace)
+	data, err := service.Pv.GetPvBind(params.Name)
 	if err != nil {
 		logrus.Error(err.Error())
 		c.JSON(500, gin.H{

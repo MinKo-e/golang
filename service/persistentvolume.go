@@ -23,14 +23,14 @@ type PvResp struct {
 }
 
 type PvFied struct {
-	Name                          string            `json:"name" binding:"required "`
+	Name                          string            `json:"name" binding:"required"`
 	Label                         map[string]string `json:"label" binding:"required"`
 	Storage                       string            `json:"storage"  binding:"required"`
-	AccessModes                   string            `json:"access_modes" binding:"required" `
+	AccessModes                   string            `json:"access_modes" binding:"required"`
 	StorageClass                  string            `json:"storage_class"`
 	HostPath                      string            `json:"host_path"`
 	NFS                           bool              `json:"nfs"`
-	NFSSever                      string            `json:"nfs_sever"`
+	NFSServer                     string            `json:"nfs_server"`
 	NFSPath                       string            `json:"nfs_path"`
 	PersistentVolumeReclaimPolicy string            `json:"persistent_volume_reclaim_policy"`
 	VolumeMode                    string            `json:"volume_mode"`
@@ -87,6 +87,7 @@ func (p *pv) UpdatePv(content string) (err error) {
 func (p *pv) CreatePv(data *PvFied) (err error) {
 	var FileSystem = corev1.PersistentVolumeFilesystem
 	var Block = corev1.PersistentVolumeBlock
+
 	options := &corev1.PersistentVolume{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:   data.Name,
@@ -96,15 +97,28 @@ func (p *pv) CreatePv(data *PvFied) (err error) {
 			Capacity: map[corev1.ResourceName]resource.Quantity{
 				corev1.ResourceStorage: resource.MustParse(data.Storage),
 			},
-			PersistentVolumeSource:        corev1.PersistentVolumeSource{},
-			AccessModes:                   []corev1.PersistentVolumeAccessMode{corev1.PersistentVolumeAccessMode(data.AccessModes)},
-			PersistentVolumeReclaimPolicy: corev1.PersistentVolumeReclaimPolicy(data.PersistentVolumeReclaimPolicy),
+			PersistentVolumeSource: corev1.PersistentVolumeSource{
+				HostPath: &corev1.HostPathVolumeSource{
+					Path: data.HostPath,
+					Type: nil,
+				},
+			},
+			AccessModes:                   []corev1.PersistentVolumeAccessMode{corev1.ReadWriteOnce},
+			PersistentVolumeReclaimPolicy: corev1.PersistentVolumeReclaimDelete,
 			StorageClassName:              "manual",
 			VolumeMode:                    &FileSystem,
 		},
 	}
 	if data.VolumeMode != "file_system" {
 		options.Spec.VolumeMode = &Block
+	}
+	if data.AccessModes != "" {
+		if data.AccessModes == "RWX" {
+			options.Spec.AccessModes = []corev1.PersistentVolumeAccessMode{corev1.ReadWriteMany}
+		} else if data.AccessModes == "ROX" {
+			options.Spec.AccessModes = []corev1.PersistentVolumeAccessMode{corev1.ReadOnlyMany}
+		}
+
 	}
 	if data.StorageClass != "" {
 		options.Spec.StorageClassName = data.StorageClass
@@ -117,9 +131,11 @@ func (p *pv) CreatePv(data *PvFied) (err error) {
 		options.Spec.HostPath = Hostpath
 	}
 	if data.NFS && data.HostPath == "" {
-		var nfs = &corev1.NFSVolumeSource{Server: data.NFSSever, Path: data.NFSPath, ReadOnly: false}
-		options.Spec.NFS = nfs
+		var nfs = &corev1.NFSVolumeSource{Server: data.NFSServer, Path: data.NFSPath, ReadOnly: false}
+		options.Spec.PersistentVolumeSource.NFS = nfs
+		options.Spec.PersistentVolumeSource.HostPath = nil
 	}
+
 	_, err = K8s.Clientset.CoreV1().PersistentVolumes().Create(context.TODO(), options, metav1.CreateOptions{})
 	if err != nil {
 		logrus.Error("创建Pv失败" + err.Error())
@@ -164,4 +180,33 @@ func (p *pv) GetPv(filterName string, limit, page int) (*PvResp, error) {
 		Total: total,
 		Items: pv,
 	}, nil
+}
+
+func (p *pv) GetPvNum() (t int, err error) {
+
+	pv_list, err := K8s.Clientset.CoreV1().PersistentVolumes().List(context.TODO(), metav1.ListOptions{})
+	if err != nil {
+		logrus.Error("获取Pod列表失败" + err.Error())
+		return 0, err
+
+	}
+	t = len(pv_list.Items)
+
+	return t, nil
+}
+
+func (p *pv) GetPvBind(name string) (n string, err error) {
+
+	pv, err := K8s.Clientset.CoreV1().PersistentVolumes().Get(context.TODO(), name, metav1.GetOptions{})
+	if err != nil {
+		logrus.Error("获取Pod列表失败" + err.Error())
+		return "", err
+
+	}
+	n = ""
+	if n = pv.Spec.ClaimRef.Name; n == "" {
+		return "", nil
+	}
+
+	return n, nil
 }

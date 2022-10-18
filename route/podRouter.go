@@ -15,7 +15,8 @@ func PodRouter(r *gin.Engine) {
 			GET("/pod_log", controller.GetPodLogHandler).
 			GET("/pod_num", controller.GetNsPodNumHandler).
 			GET("/pod_details", controller.GetPodDetailsHandler).
-			GET("/pod_container_list").
+			GET("/pod_container_list", controller.GetContainerNameHandler).
+			GET("/event_list", controller.GetEventListHandler).
 			POST("/pod_create", controller.CreatePodHandler).
 			DELETE("/pod_delete", controller.DeletePodHandler).
 			PATCH("pod_update", controller.UpdatePodHandler)

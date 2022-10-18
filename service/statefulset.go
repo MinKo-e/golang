@@ -14,7 +14,7 @@ import (
 
 type stsCell appsv1.StatefulSet
 
-var Sts ds
+var Sts sts
 
 type sts struct{}
 
@@ -84,6 +84,22 @@ func (s *sts) GetStsNum() (t []Ststotal, err error) {
 	}
 
 	return t, nil
+}
+
+func (s *sts) ScaleSts(name, namespace string, replicas int) (replica int32, err error) {
+
+	scale, err := K8s.Clientset.AppsV1().StatefulSets(namespace).GetScale(context.TODO(), name, metav1.GetOptions{})
+	if err != nil {
+		logrus.Error("获取副本数失败" + err.Error())
+		return 0, errors.New("获取副本数失败" + err.Error())
+	}
+	scale.Spec.Replicas = int32(replicas)
+	newscale, err := K8s.Clientset.AppsV1().StatefulSets(namespace).UpdateScale(context.TODO(), name, scale, metav1.UpdateOptions{})
+	if err != nil {
+		logrus.Error("更新副本数失败" + err.Error())
+		return 0, errors.New("更新副本数失败" + err.Error())
+	}
+	return newscale.Spec.Replicas, nil
 }
 
 func (s *sts) GetSts(filterName, namespace string, limit, page int) (*StsResp, error) {

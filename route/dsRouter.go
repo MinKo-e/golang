@@ -6,9 +6,9 @@ import (
 )
 
 func DsRouter(r *gin.Engine) {
-	appsV1 := r.Group("/api/appsv1")
+
 	{
-		appsV1.
+		Appsv1.
 			GET("/ds_list", controller.GetDsHandler).
 			GET("/ds_num", controller.GetNsDsNumHandler).
 			GET("/ds_details", controller.GetDsDetailsHandler).

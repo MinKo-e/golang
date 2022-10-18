@@ -9,6 +9,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/intstr"
 	"time"
 )
 
@@ -218,7 +219,41 @@ func (d *deploy) CreateDeploy(data *DeployFied) (err error) {
 		},
 		Spec: container,
 	}
-
+	if data.HealthCheck {
+		container.Containers[0].ReadinessProbe = &corev1.Probe{
+			ProbeHandler:        corev1.ProbeHandler{},
+			InitialDelaySeconds: 5,
+			TimeoutSeconds:      5,
+			PeriodSeconds:       5,
+		}
+		if data.HealthType == "tcp" {
+			container.Containers[0].ReadinessProbe.ProbeHandler = corev1.ProbeHandler{
+				TCPSocket: &corev1.TCPSocketAction{
+					Port: intstr.IntOrString{
+						Type:   0,
+						IntVal: data.ContainerPost,
+					},
+					Host: data.HealthHost,
+				},
+			}
+		} else if data.HealthType == "http" {
+			container.Containers[0].ReadinessProbe.ProbeHandler = corev1.ProbeHandler{
+				HTTPGet: &corev1.HTTPGetAction{
+					Port: intstr.IntOrString{
+						Type:   0,
+						IntVal: data.ContainerPost,
+					},
+					Path: data.HealthPath,
+				},
+			}
+		} else if data.HealthType == "exec" {
+			container.Containers[0].ReadinessProbe.ProbeHandler = corev1.ProbeHandler{
+				Exec: &corev1.ExecAction{
+					Command: data.HealthExec,
+				},
+			}
+		}
+	}
 	deployment := &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      data.Name,

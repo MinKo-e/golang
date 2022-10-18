@@ -7,10 +7,9 @@ import (
 	"k8sManager/service"
 )
 
-func GetDeployHandler(c *gin.Context) {
+func GetNsHandler(c *gin.Context) {
 	params := new(struct {
 		FilterName string `form:"filter_name"`
-		Namespace  string `form:"namespace" binding:"required"`
 		Limit      int    `form:"limit"`
 		Page       int    `form:"page"`
 	})
@@ -23,7 +22,7 @@ func GetDeployHandler(c *gin.Context) {
 		})
 		return
 	}
-	data, err := service.Deploy.GetDeploys(params.FilterName, params.Namespace, params.Limit, params.Page)
+	data, err := service.Ns.GetNss(params.FilterName, params.Limit, params.Page)
 	if err != nil {
 		logrus.Error(err.Error())
 		c.JSON(500, gin.H{
@@ -41,10 +40,9 @@ func GetDeployHandler(c *gin.Context) {
 	})
 }
 
-func GetDeployDetailsHandler(c *gin.Context) {
+func GetNsDetailsHandler(c *gin.Context) {
 	params := new(struct {
-		Name      string `form:"name" binding:"required"`
-		Namespace string `form:"namespace" binding:"required"`
+		Name string `form:"name" binding:"required"`
 	})
 	if err := c.Bind(params); err != nil {
 		logrus.Error("Bind绑定form参数失败" + err.Error())
@@ -55,7 +53,7 @@ func GetDeployDetailsHandler(c *gin.Context) {
 		})
 		return
 	}
-	data, err := service.Deploy.GetDeployDetails(params.Name, params.Namespace)
+	data, err := service.Ns.GetNsDetails(params.Name)
 	if err != nil {
 		logrus.Error(err.Error())
 		c.JSON(500, gin.H{
@@ -73,8 +71,8 @@ func GetDeployDetailsHandler(c *gin.Context) {
 	})
 }
 
-func CreateDeployHandler(c *gin.Context) {
-	params := &service.DeployFied{}
+func CreateNsHandler(c *gin.Context) {
+	params := &service.NsFied{}
 	if err := c.Bind(params); err != nil {
 		logrus.Error("Bind绑定form参数失败" + err.Error())
 		c.JSON(500, gin.H{
@@ -85,7 +83,7 @@ func CreateDeployHandler(c *gin.Context) {
 		return
 	}
 	fmt.Printf("%#v\n", params)
-	err := service.Deploy.CreateDeploy(params)
+	err := service.Ns.CreateNs(params)
 	if err != nil {
 		logrus.Error(err.Error())
 		c.JSON(500, gin.H{
@@ -99,12 +97,12 @@ func CreateDeployHandler(c *gin.Context) {
 	c.JSON(200, gin.H{
 		"msg":  "Successfully",
 		"code": 200,
-		"name": params.PName,
+		"name": params.Name,
 	})
 }
 
-func GetNsDeployNumHandler(c *gin.Context) {
-	data, err := service.Deploy.GetDeployNum()
+func GetNsNumHandler(c *gin.Context) {
+	data, err := service.Ns.GetNsNum()
 	if err != nil {
 		logrus.Error(err.Error())
 		c.JSON(500, gin.H{
@@ -122,10 +120,9 @@ func GetNsDeployNumHandler(c *gin.Context) {
 	})
 }
 
-func DeleteDeployHandler(c *gin.Context) {
+func DeleteNsHandler(c *gin.Context) {
 	params := new(struct {
-		Name      string `form:"name" binding:"required"`
-		Namespace string `form:"namespace" binding:"required"`
+		Name string `form:"name" binding:"required"`
 	})
 	if err := c.Bind(params); err != nil {
 		logrus.Error("Bind绑定form参数失败" + err.Error())
@@ -136,7 +133,7 @@ func DeleteDeployHandler(c *gin.Context) {
 		})
 		return
 	}
-	err := service.Deploy.DeleteDeploy(params.Name, params.Namespace)
+	err := service.Ns.DeleteNs(params.Name)
 	if err != nil {
 		logrus.Error(err.Error())
 		c.JSON(500, gin.H{
@@ -152,12 +149,9 @@ func DeleteDeployHandler(c *gin.Context) {
 		"code": 200,
 	})
 }
-
-func ScaleDeployHandler(c *gin.Context) {
+func UpdateNsHandler(c *gin.Context) {
 	params := new(struct {
-		Name      string `form:"name" binding:"required"`
-		Namespace string `form:"namespace" binding:"required"`
-		Replica   int    `form:"replica" binding:"required"`
+		Content string `form:"content" binding:"required"`
 	})
 	if err := c.Bind(params); err != nil {
 		logrus.Error("Bind绑定form参数失败" + err.Error())
@@ -168,71 +162,7 @@ func ScaleDeployHandler(c *gin.Context) {
 		})
 		return
 	}
-	replica, err := service.Deploy.ScaleDeploys(params.Name, params.Namespace, params.Replica)
-	if err != nil {
-		logrus.Error(err.Error())
-		c.JSON(500, gin.H{
-			"code": "500",
-			"data": nil,
-			"msg":  err.Error(),
-		})
-		return
-	}
-
-	c.JSON(200, gin.H{
-		"msg":     "Successfully",
-		"code":    200,
-		"replica": replica,
-	})
-}
-
-func RestartDeploy(c *gin.Context) {
-	params := new(struct {
-		Name      string `form:"name" binding:"required"`
-		Namespace string `form:"namespace" binding:"required"`
-	})
-	if err := c.Bind(params); err != nil {
-		logrus.Error("Bind绑定form参数失败" + err.Error())
-		c.JSON(500, gin.H{
-			"code": "500",
-			"data": nil,
-			"msg":  err.Error(),
-		})
-		return
-	}
-	err := service.Deploy.RestartDeploy(params.Name, params.Namespace)
-	if err != nil {
-		logrus.Error(err.Error())
-		c.JSON(500, gin.H{
-			"code": "500",
-			"data": nil,
-			"msg":  err.Error(),
-		})
-		return
-	}
-
-	c.JSON(200, gin.H{
-		"msg":  "Successfully",
-		"code": 200,
-	})
-}
-
-func UpdateDeployHandler(c *gin.Context) {
-	params := new(struct {
-		Name      string `form:"name" binding:"required"`
-		Namespace string `form:"namespace" binding:"required"`
-		Content   string `form:"content" binding:"required"`
-	})
-	if err := c.Bind(params); err != nil {
-		logrus.Error("Bind绑定form参数失败" + err.Error())
-		c.JSON(500, gin.H{
-			"code": "500",
-			"data": nil,
-			"msg":  err.Error(),
-		})
-		return
-	}
-	err := service.Deploy.UpdateDeploy(params.Namespace, params.Content)
+	err := service.Ns.UpdateNs(params.Content)
 	if err != nil {
 		logrus.Error(err.Error())
 		c.JSON(500, gin.H{

@@ -9,13 +9,13 @@ func PvRouter(r *gin.Engine) {
 
 	{
 		v1.
-			GET("/pv_list", controller.GetpvHandler).
-			GET("/pv_log", controller.GetpvLogHandler).
-			GET("/pv_num", controller.GetNspvNumHandler).
-			GET("/pv_details", controller.GetpvDetailsHandler).
-			POST("/pv_create", controller.CreatepvHandler).
-			DELETE("/pv_delete", controller.DeletepvHandler).
-			PATCH("pv_update", controller.UpdatepvHandler)
+			GET("/pv_list", controller.GetPvHandler).
+			GET("/pv_num", controller.GetPvNumHandler).
+			GET("/pv_details", controller.GetPVDetailsHandler).
+			GET("/pv_status", controller.GetPvBindHandler).
+			POST("/pv_create", controller.CreatePvHandler).
+			DELETE("/pv_delete", controller.DeletePvHandler).
+			PATCH("pv_update", controller.UpdatePvHandler)
 
 	}
 }

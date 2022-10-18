@@ -7,7 +7,7 @@ import (
 	"k8sManager/service"
 )
 
-func GetPodHandler(c *gin.Context) {
+func GetConfigmapHandler(c *gin.Context) {
 	params := new(struct {
 		FilterName string `form:"filter_name"`
 		Namespace  string `form:"namespace" binding:"required"`
@@ -23,7 +23,7 @@ func GetPodHandler(c *gin.Context) {
 		})
 		return
 	}
-	data, err := service.Pod.GetPods(params.FilterName, params.Namespace, params.Limit, params.Page)
+	data, err := service.Configmap.GetConfigmaps(params.FilterName, params.Namespace, params.Limit, params.Page)
 	if err != nil {
 		logrus.Error(err.Error())
 		c.JSON(500, gin.H{
@@ -41,74 +41,7 @@ func GetPodHandler(c *gin.Context) {
 	})
 }
 
-func GetEventListHandler(c *gin.Context) {
-	params := new(struct {
-		FilterName string `form:"filter_name"`
-		Namespace  string `form:"namespace" binding:"required"`
-		Limit      int    `form:"limit"`
-		Page       int    `form:"page"`
-	})
-	if err := c.Bind(params); err != nil {
-		logrus.Error("Bind绑定form参数失败" + err.Error())
-		c.JSON(500, gin.H{
-			"code": "500",
-			"data": nil,
-			"msg":  err.Error(),
-		})
-		return
-	}
-	data, err := service.Event.GetEvents(params.FilterName, params.Namespace, params.Limit, params.Page)
-	if err != nil {
-		logrus.Error(err.Error())
-		c.JSON(500, gin.H{
-			"code": "500",
-			"data": nil,
-			"msg":  err.Error(),
-		})
-		return
-	}
-
-	c.JSON(200, gin.H{
-		"msg":  "Successfully",
-		"code": 200,
-		"data": data,
-	})
-}
-
-func GetPodLogHandler(c *gin.Context) {
-	params := new(struct {
-		Name          string `form:"name" binding:"required"`
-		ContainerName string `form:"container_name" binding:"required"`
-		Namespace     string `form:"namespace" binding:"required"`
-	})
-	if err := c.Bind(params); err != nil {
-		logrus.Error("Bind绑定form参数失败" + err.Error())
-		c.JSON(500, gin.H{
-			"code": "500",
-			"data": nil,
-			"msg":  err.Error(),
-		})
-		return
-	}
-	data, err := service.Pod.GetPodLog(params.Name, params.Namespace, params.ContainerName)
-	if err != nil {
-		logrus.Error(err.Error())
-		c.JSON(500, gin.H{
-			"code": "500",
-			"data": nil,
-			"msg":  err.Error(),
-		})
-		return
-	}
-
-	c.JSON(200, gin.H{
-		"msg":  "Successfully",
-		"code": 200,
-		"data": data,
-	})
-}
-
-func GetPodDetailsHandler(c *gin.Context) {
+func GetConfigmapDetailsHandler(c *gin.Context) {
 	params := new(struct {
 		Name      string `form:"name" binding:"required"`
 		Namespace string `form:"namespace" binding:"required"`
@@ -122,7 +55,7 @@ func GetPodDetailsHandler(c *gin.Context) {
 		})
 		return
 	}
-	data, err := service.Pod.GetPodDetails(params.Name, params.Namespace)
+	data, err := service.Configmap.GetConfigmapDetails(params.Name, params.Namespace)
 	if err != nil {
 		logrus.Error(err.Error())
 		c.JSON(500, gin.H{
@@ -140,8 +73,8 @@ func GetPodDetailsHandler(c *gin.Context) {
 	})
 }
 
-func CreatePodHandler(c *gin.Context) {
-	params := &service.PodFied{}
+func CreateConfigmapHandler(c *gin.Context) {
+	params := &service.ConfigmapFied{}
 	if err := c.Bind(params); err != nil {
 		logrus.Error("Bind绑定form参数失败" + err.Error())
 		c.JSON(500, gin.H{
@@ -152,7 +85,7 @@ func CreatePodHandler(c *gin.Context) {
 		return
 	}
 	fmt.Printf("%#v\n", params)
-	err := service.Pod.CreatePod(params)
+	err := service.Configmap.CreateConfigmap(params)
 	if err != nil {
 		logrus.Error(err.Error())
 		c.JSON(500, gin.H{
@@ -166,12 +99,12 @@ func CreatePodHandler(c *gin.Context) {
 	c.JSON(200, gin.H{
 		"msg":  "Successfully",
 		"code": 200,
-		"name": params.PName,
+		"name": params.Name,
 	})
 }
 
-func GetNsPodNumHandler(c *gin.Context) {
-	data, err := service.Pod.GetPodNum()
+func GetNsConfigmapNumHandler(c *gin.Context) {
+	data, err := service.Configmap.GetConfigmapNum()
 	if err != nil {
 		logrus.Error(err.Error())
 		c.JSON(500, gin.H{
@@ -189,7 +122,7 @@ func GetNsPodNumHandler(c *gin.Context) {
 	})
 }
 
-func DeletePodHandler(c *gin.Context) {
+func DeleteConfigmapHandler(c *gin.Context) {
 	params := new(struct {
 		Name      string `form:"name" binding:"required"`
 		Namespace string `form:"namespace" binding:"required"`
@@ -203,7 +136,7 @@ func DeletePodHandler(c *gin.Context) {
 		})
 		return
 	}
-	err := service.Pod.DeletePod(params.Name, params.Namespace)
+	err := service.Configmap.DeleteConfigmap(params.Name, params.Namespace)
 	if err != nil {
 		logrus.Error(err.Error())
 		c.JSON(500, gin.H{
@@ -219,7 +152,7 @@ func DeletePodHandler(c *gin.Context) {
 		"code": 200,
 	})
 }
-func UpdatePodHandler(c *gin.Context) {
+func UpdateConfigmapHandler(c *gin.Context) {
 	params := new(struct {
 		Namespace string `form:"namespace" binding:"required"`
 		Content   string `form:"content" binding:"required"`
@@ -233,7 +166,7 @@ func UpdatePodHandler(c *gin.Context) {
 		})
 		return
 	}
-	err := service.Pod.UpdatePod(params.Namespace, params.Content)
+	err := service.Configmap.UpdateConfigmap(params.Namespace, params.Content)
 	if err != nil {
 		logrus.Error(err.Error())
 		c.JSON(500, gin.H{
@@ -250,7 +183,7 @@ func UpdatePodHandler(c *gin.Context) {
 	})
 }
 
-func GetContainerNameHandler(c *gin.Context) {
+func GetConfigmapDataHandler(c *gin.Context) {
 	params := new(struct {
 		Name      string `form:"name" binding:"required"`
 		Namespace string `form:"namespace" binding:"required"`
@@ -264,7 +197,7 @@ func GetContainerNameHandler(c *gin.Context) {
 		})
 		return
 	}
-	data, err := service.Pod.GetContainerName(params.Name, params.Namespace)
+	data, err := service.Configmap.GetConfigmapData(params.Name, params.Namespace)
 	if err != nil {
 		logrus.Error(err.Error())
 		c.JSON(500, gin.H{
